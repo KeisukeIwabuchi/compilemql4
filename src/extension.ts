@@ -12,15 +12,18 @@ var CompileMql4Extension = function () {
     outputChannel = vscode.window.createOutputChannel("MetaEditor");
 
     function compileFile(path: string): void {
-        let configuration: vscode.WorkspaceConfiguration;
+        let configuration: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('compilemql4');
+        let fileName: string = pathModule.basename(path);
         let logFile: string;
         let command: string;
+
+        if (checkExclude(fileName) === false) {
+            return;
+        }
 
         outputChannel.clear();
         outputChannel.show(true);
         outputChannel.appendLine('start compile...');
-
-        configuration = vscode.workspace.getConfiguration('compilemql4');
 
         if (configuration.metaeditorDir.length === 0 ||
             configuration.metaeditorDir === undefined) {
@@ -40,7 +43,7 @@ var CompileMql4Extension = function () {
         // log setting
         logFile = (configuration.logDir.length > 0) ? 
             configuration.logDir :
-            path.replace(pathModule.basename(path), 'compilemql4.log');
+            path.replace(fileName, 'compilemql4.log');
         command += ' /log';
         command += ':"' + logFile + '"';
 
@@ -55,6 +58,11 @@ var CompileMql4Extension = function () {
                     throw err;
                 });
         });
+    }
+
+    function checkExclude (filename: string): boolean {
+        let extension: string = pathModule.parse(filename).ext;
+        return extension === '.mq4' || extension === '.mqh' || extension === '.mq5';
     }
 
     function deleteBom (str: string): string {

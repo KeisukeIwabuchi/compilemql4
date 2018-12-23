@@ -1,29 +1,88 @@
 'use strict';
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+
 import * as vscode from 'vscode';
+import * as childProcess from 'child_process';
+import * as fs from 'fs';
+import * as util from 'util';
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+var CompileMql4Extension = function () {
+    var outputChannel: vscode.OutputChannel;
+
+    outputChannel = vscode.window.createOutputChannel("MetaEditor");
+
+    function compileFile(path: string) {
+        var configuration = vscode.workspace.getConfiguration('compilemql4');
+
+        outputChannel.clear();
+        outputChannel.show(true);
+        outputChannel.appendLine('start compile...');
+
+        let logFile = '';
+        let command = '"' + configuration.metaeditorDir + '"';
+        command += ' /compile:"' + path + '"';
+        if (configuration.includeDir.length > 0) {
+            command += ' /include:"' + configuration.includeDir + '"';
+        }
+        command += ' /log';
+        if (configuration.logDir.length > 0) {
+            logFile = configuration.logDir;
+            command += ':"' + logFile + '"';
+        } else {
+            logFile = path.slice(0, -3) + 'log';
+        }
+        // outputChannel.appendLine(command);
+
+        childProcess.exec(command, (error, stdout, stderror) => {
+            const readFile = util.promisify(fs.readFile);
+            readFile(logFile, 'ucs-2').then((data) => {
+                outputChannel.appendLine(deleteBom(data));
+            })
+                .catch((err) => {
+                    throw err;
+                });
+        });
+    }
+
+    function deleteBom (str: string) {
+        if (str.charCodeAt(0) === 0xFEFF) {
+            return str.slice(1);
+        }
+        return str;
+    }
+
+    return {
+        OnSave: function (document: vscode.TextDocument) {
+            try {
+                var configuration = vscode.workspace.getConfiguration('compilemql4');
+
+                if (configuration.compileAfterSave === true) {
+                    compileFile(document.fileName);
+                }
+            }
+            catch (e) {
+                vscode.window.showErrorMessage('CompileMQL4: could not generate ex4 file: ' + e);
+            }
+        },
+        CompileFileFromCommand: function () {
+            let ed = vscode.window.activeTextEditor;
+            if (ed) {
+                compileFile(ed.document.fileName);
+            }
+        }
+    }
+}
+
 export function activate(context: vscode.ExtensionContext) {
+    var extension = CompileMql4Extension();
 
-    // Use the console to output diagnostic information (console.log) and errors (console.error)
-    // This line of code will only be executed once when your extension is activated
-    console.log('Congratulations, your extension "compilemql4" is now active!');
+    vscode.workspace.onDidSaveTextDocument(function (document) { extension.OnSave(document) });
 
-    // The command has been defined in the package.json file
-    // Now provide the implementation of the command with  registerCommand
-    // The commandId parameter must match the command field in package.json
-    let disposable = vscode.commands.registerCommand('extension.sayHello', () => {
-        // The code you place here will be executed every time your command is executed
-
-        // Display a message box to the user
-        vscode.window.showInformationMessage('Hello World!');
+    let disposable = vscode.commands.registerCommand('compilemql4.compileFile', () => {
+        extension.CompileFileFromCommand();
     });
 
     context.subscriptions.push(disposable);
 }
 
-// this method is called when your extension is deactivated
 export function deactivate() {
 }

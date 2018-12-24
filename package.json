@@ -25,7 +25,7 @@
                 },
                 "compilemql4.metaeditorDir": {
                     "type": "string",
-                    "default": "C:\\MT4_Install\\Test_OANDA - MetaTrader\\metaeditor.exe",
+                    "default": "C:\\MT4_Install\\Sample_MetaTrader\\metaeditor.exe",
                     "description": "Set the path of metaeditor.exe for use compile."
                 },
                 "compilemql4.includeDir": {

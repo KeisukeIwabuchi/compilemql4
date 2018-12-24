@@ -1,29 +1,110 @@
 'use strict';
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+
 import * as vscode from 'vscode';
+import * as childProcess from 'child_process';
+import * as fs from 'fs';
+import * as util from 'util';
+import * as pathModule from 'path';
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
+var CompileMql4Extension = function () {
+    var outputChannel: vscode.OutputChannel;
+
+    outputChannel = vscode.window.createOutputChannel("MetaEditor");
+
+    function compileFile(path: string): void {
+        let configuration: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('compilemql4');
+        let fileName: string = pathModule.basename(path);
+        let logFile: string;
+        let command: string;
+
+        if (checkExclude(fileName) === false) {
+            return;
+        }
+
+        outputChannel.clear();
+        outputChannel.show(true);
+        outputChannel.appendLine('start compile...');
+
+        if (configuration.metaeditorDir.length === 0 ||
+            configuration.metaeditorDir === undefined) {
+            outputChannel.appendLine('Please input parameter \'metaeditorDir\'.');
+            return;
+        }
+
+        // compile setting
+        command = '"' + configuration.metaeditorDir + '"';
+        command += ' /compile:"' + path + '"';
+
+        // include setting
+        if (configuration.includeDir.length > 0) {
+            command += ' /include:"' + configuration.includeDir + '"';
+        }
+
+        // log setting
+        logFile = (configuration.logDir.length > 0) ? 
+            configuration.logDir :
+            path.replace(fileName, 'compilemql4.log');
+        command += ' /log';
+        command += ':"' + logFile + '"';
+
+        // execute compile command
+        childProcess.exec(command, (error, stdout, stderror) => {
+            const readFile = util.promisify(fs.readFile);
+            readFile(logFile, 'ucs-2')
+                .then((data) => {
+                    outputChannel.appendLine(deleteBom(data));
+                })
+                .catch((err) => {
+                    throw err;
+                });
+        });
+    }
+
+    function checkExclude (filename: string): boolean {
+        let extension: string = pathModule.parse(filename).ext;
+        return extension === '.mq4' || extension === '.mqh' || extension === '.mq5';
+    }
+
+    function deleteBom (str: string): string {
+        return (str.charCodeAt(0) === 0xFEFF) ? str.slice(1) : str;
+    }
+
+    return {
+        OnSave: function (document: vscode.TextDocument) {
+            try {
+                let configuration: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('compilemql4');
+
+                if (configuration.compileAfterSave === true) {
+                    compileFile(document.fileName);
+                }
+            }
+            catch (e) {
+                vscode.window.showErrorMessage('CompileMQL4: could not generate ex4 file: ' + e);
+            }
+        },
+        CompileFileFromCommand: function () {
+            let ed: vscode.TextEditor | undefined = vscode.window.activeTextEditor;
+            if (ed !== undefined) {
+                compileFile(ed.document.fileName);
+            }
+        }
+    };
+};
+
 export function activate(context: vscode.ExtensionContext) {
+    let extension = CompileMql4Extension();
 
-    // Use the console to output diagnostic information (console.log) and errors (console.error)
-    // This line of code will only be executed once when your extension is activated
-    console.log('Congratulations, your extension "compilemql4" is now active!');
-
-    // The command has been defined in the package.json file
-    // Now provide the implementation of the command with  registerCommand
-    // The commandId parameter must match the command field in package.json
-    let disposable = vscode.commands.registerCommand('extension.sayHello', () => {
-        // The code you place here will be executed every time your command is executed
-
-        // Display a message box to the user
-        vscode.window.showInformationMessage('Hello World!');
+    vscode.workspace.onDidSaveTextDocument((document: vscode.TextDocument) => {
+        extension.OnSave(document);
     });
+
+    let disposable: vscode.Disposable = vscode.commands
+        .registerCommand('compilemql4.compileFile', () => {
+            extension.CompileFileFromCommand();
+        });
 
     context.subscriptions.push(disposable);
 }
 
-// this method is called when your extension is deactivated
 export function deactivate() {
 }

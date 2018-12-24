@@ -2,6 +2,18 @@
     "name": "compilemql4",
     "displayName": "compilemql4",
     "description": "Easy to use mql4 compiler",
+    "icon": "images/icon.png",
+    "galleryBanner": {
+        "theme": "light"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/KeisukeIwabuchi/compilemql4"
+    },
+    "author": {
+        "name": "Keisuke Iwabuchi"
+    },
+    "homepage": "https://github.com/KeisukeIwabuchi",
     "version": "0.0.1",
     "engines": {
         "vscode": "^1.30.0"
@@ -10,14 +22,40 @@
         "Other"
     ],
     "activationEvents": [
-        "onCommand:extension.sayHello"
+        "*"
     ],
     "main": "./out/extension",
     "contributes": {
+        "configuration": {
+            "type": "object",
+            "title": "CompileMQL4 configuration",
+            "properties": {
+                "compilemql4.compileAfterSave": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Automatically compile mq4/mqh file after saving"
+                },
+                "compilemql4.metaeditorDir": {
+                    "type": "string",
+                    "default": "C:\\MT4_Install\\Sample_MetaTrader\\metaeditor.exe",
+                    "description": "Set the path of metaeditor.exe for use compile."
+                },
+                "compilemql4.includeDir": {
+                    "type": "string",
+                    "default": "",
+                    "description": "If you use Include files."
+                },
+                "compilemql4.logDir": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Log file name."
+                }
+            }
+        },
         "commands": [
             {
-                "command": "extension.sayHello",
-                "title": "Hello World"
+                "command": "compilemql4.compileFile",
+                "title": "Compile mql4 file"
             }
         ]
     },
@@ -34,5 +72,6 @@
         "tslint": "^5.8.0",
         "@types/node": "^8.10.25",
         "@types/mocha": "^2.2.42"
-    }
+    },
+    "dependencies": {}
 }

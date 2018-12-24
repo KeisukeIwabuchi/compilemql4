@@ -10,6 +10,7 @@
         "type": "git",
         "url": "https://github.com/KeisukeIwabuchi/compilemql4"
     },
+    "publisher": "KeisukeIwabuchi",
     "author": {
         "name": "Keisuke Iwabuchi"
     },

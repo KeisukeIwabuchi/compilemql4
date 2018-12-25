@@ -3,20 +3,43 @@
 // Please refer to their documentation on https://mochajs.org/ for help.
 //
 
-// The module 'assert' provides assertion methods from node
 import * as assert from 'assert';
+import * as vscode from 'vscode';
+import { CompileMQL4 } from '../compileMQL4';
+import * as pathModule from 'path';
 
-// You can import and use all API from the 'vscode' module
-// as well as import your extension to test it
-// import * as vscode from 'vscode';
-// import * as myExtension from '../extension';
-
-// Defines a Mocha test suite to group tests of similar kind together
 suite("CompileMQL4 Tests", () => {
-
-    // Defines a Mocha unit test
-    test("Something 1", () => {
-        assert.equal(-1, [1, 2, 3].indexOf(5));
-        assert.equal(-1, [1, 2, 3].indexOf(0));
+  test("Test getLogFileName method", async () => {
+    const extension = new CompileMQL4();
+    let path = "C:\\Test\\MQL4\\Experts\\sample.mq4";
+    let fileName: string = pathModule.basename(path);
+    let settings = vscode.workspace.getConfiguration("compilemql4");
+    
+    await settings.update("logDir", "D:\\Hoge\\unittest.log", true).then(() => {
+      assert.strictEqual(
+        (extension as any).getLogFileName(path, fileName),
+        "D:\\Hoge\\unittest.log"
+      );
     });
+
+    await settings.update("logDir", "", true).then(() => {
+      assert.strictEqual(
+        (extension as any).getLogFileName(path, fileName),
+        "C:\\Test\\MQL4\\Experts\\compilemql4.log"
+      );
+    });
+  });
+  
+  test("Test checkExclude method", () => {
+    const extension = new CompileMQL4();
+    
+    // mq4, mqh, mq5はtrue
+    assert.strictEqual((extension as any).checkExclude("test.mq4"), true);
+    assert.strictEqual((extension as any).checkExclude("test.mqh"), true);
+    assert.strictEqual((extension as any).checkExclude("test.mq5"), true);
+
+    // それ以外はfalse
+    assert.strictEqual((extension as any).checkExclude("test.js"), false);
+    assert.strictEqual((extension as any).checkExclude("test.exe"), false);
+  });
 });

@@ -29,7 +29,11 @@ export class CompileMQL4 {
 
     // execute compile command
     let command = this.createCommand(path, logFile);
+    outputChannel.appendLine(command);
+
     childProcess.exec(command, (error, stdout, stderror) => {
+      outputChannel.appendLine(stdout);
+      outputChannel.appendLine(stderror);
       const readFile = util.promisify(fs.readFile);
       readFile(logFile, 'ucs-2')
         .then((data) => {
@@ -49,11 +53,16 @@ export class CompileMQL4 {
   }
 
   private createCommand(path: string, logFile: string): string {
-    let command: string;
+    let command: string = '';
     let configuration: vscode.WorkspaceConfiguration = vscode.workspace.getConfiguration('compilemql4');
     
+    // wine command path
+    if (configuration.wineCommandPath.length > 0) {
+      command += configuration.wineCommandPath + ' ';
+    }
+
     // compile setting
-    command = '"' + configuration.metaeditorDir + '"';
+    command += '"' + configuration.metaeditorDir + '"';
     command += ' /compile:"' + path + '"';
 
     // include setting

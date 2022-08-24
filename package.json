@@ -50,6 +50,11 @@
                     "type": "string",
                     "default": "",
                     "description": "Log file name."
+                },
+                "compilemql4.wineCommandPath": {
+                    "type": "string",
+                    "default": "",
+                    "description": "Specify when using the wine command."
                 }
             }
         },
@@ -72,7 +77,7 @@
         "@types/node": "^8.10.25",
         "tslint": "^5.8.0",
         "typescript": "^3.1.4",
-        "vscode": "^1.1.25"
+        "vscode": "^1.1.37"
     },
     "dependencies": {}
 }
